@@ -12,7 +12,7 @@ ext.bookmarker	=	{
 					var content_type = xhr.getResponseHeader('Content-Type');
 					finishcb(content_type);
 				}
-			}
+			};
 			xhr.send();
 		}
 		else if(url.match(/^file:/))
@@ -67,22 +67,26 @@ ext.bookmarker	=	{
 			else
 			{
 				ext.bookmarker.get_content_type(tab.url, function(content_type) {
-					type	=	content_type.match(/^image/) ? 'image' : 'link';
-					if(type == 'image')
-					{
-						do_bookmark({});
+          if (content_type == null) {
+              console.log("Error: content_type is null");
+          } else {
+					    type	=	content_type.match(/^image/) ? 'image' : 'link';
+					    if(type == 'image')
+					    {
+						      do_bookmark({});
+					    }
+					    else
+					    {
+						      chrome.tabs.executeScript(tab.id, {file: 'data/bookmark.scrape.js'});
+						      chrome.runtime.onMessage.addListener(function(request, sender) {
+							        if(request.type != 'bookmark-scrape') return false;
+							        chrome.runtime.onMessage.removeListener(arguments.callee);
+							        setTimeout(function() { do_bookmark(request.data); }, 0);
+							        return false;
+						      });
+              }
 					}
-					else
-					{
-						chrome.tabs.executeScript(tab.id, {file: 'data/bookmark.scrape.js'});
-						chrome.runtime.onMessage.addListener(function(request, sender) {
-							if(request.type != 'bookmark-scrape') return false;
-							chrome.runtime.onMessage.removeListener(arguments.callee);
-							setTimeout(function() { do_bookmark(request.data); }, 0);
-							return false;
-						});
-					}
-				});
+				  });
 			}
 		});
 	}
